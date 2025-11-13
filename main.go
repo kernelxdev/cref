@@ -25,15 +25,19 @@ var (
 	sourceFile   string
 	tempExe      string
 	waitingRerun bool
+	compilerArgs []string
 )
 
 func main() {
 	if len(os.Args) < 3 || os.Args[1] != "run" {
-		fmt.Println("Usage: cref run <file.c>")
+		fmt.Println("Usage: cref run <file.c> [compiler args...]")
 		os.Exit(1)
 	}
 
 	sourceFile = os.Args[2]
+	if len(os.Args) > 3 {
+		compilerArgs = os.Args[3:]
+	}
 	if _, err := os.Stat(sourceFile); os.IsNotExist(err) {
 		fmt.Printf("%sError: File '%s' not found%s\n", colorRed, sourceFile, colorReset)
 		os.Exit(1)
@@ -98,7 +102,12 @@ func keyboardListener() {
 func compileAndRun() {
 	os.Remove(tempExe)
 
-	cmd := exec.Command("clang", "-o", tempExe, sourceFile)
+	args := []string{"-o", tempExe, sourceFile}
+	if len(compilerArgs) > 0 {
+		args = append(args, compilerArgs...)
+	}
+
+	cmd := exec.Command("clang", args...)
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
